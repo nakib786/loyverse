@@ -1,15 +1,4 @@
-const express = require('express');
-const cors = require('cors');
 const fetch = require('node-fetch');
-const path = require('path');
-
-const app = express();
-
-// Enable CORS for all routes
-app.use(cors());
-
-// Serve static files
-app.use(express.static(path.join(__dirname, '..')));
 
 // Loyverse API configuration
 const LOYVERSE_API_BASE = 'https://api.loyverse.com/v1.0';
@@ -48,148 +37,118 @@ async function makeLoyverseRequest(endpoint, params = {}) {
   return data;
 }
 
-// Generic proxy endpoint for Loyverse API
-app.get('/api/loyverse/:endpoint', async (req, res) => {
-  try {
-    const { endpoint } = req.params;
-    const params = req.query;
-    
-    const data = await makeLoyverseRequest(endpoint, params);
-    res.json(data);
-  } catch (error) {
-    console.error('Error fetching from Loyverse API:', error);
-    res.status(500).json({ 
-      error: 'Failed to fetch data from Loyverse API', 
-      details: error.message 
-    });
+// Vercel serverless function handler
+module.exports = async (req, res) => {
+  // Enable CORS
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
   }
-});
 
-// Comprehensive data endpoint that fetches all relevant data
-app.get('/api/loyverse-data', async (req, res) => {
+  const { path } = req.query;
+  const fullPath = Array.isArray(path) ? path.join('/') : path || '';
+
+  console.log(`Request path: ${fullPath}`);
+
   try {
-    console.log('Fetching comprehensive Loyverse data...');
-    
-    // Fetch all relevant data in parallel
-    const [
-      itemsResponse,
-      categoriesResponse,
-      modifiersResponse,
-      storesResponse,
-      taxesResponse
-    ] = await Promise.allSettled([
-      makeLoyverseRequest('items'),
-      makeLoyverseRequest('categories'),
-      makeLoyverseRequest('modifiers'),
-      makeLoyverseRequest('stores'),
-      makeLoyverseRequest('taxes')
-    ]);
+    // Handle different API endpoints
+    if (fullPath.startsWith('api/loyverse/')) {
+      const endpoint = fullPath.replace('api/loyverse/', '');
+      
+      if (endpoint === 'data') {
+        // Comprehensive data endpoint
+        console.log('Fetching comprehensive Loyverse data...');
+        
+        const [
+          itemsResponse,
+          categoriesResponse,
+          modifiersResponse,
+          storesResponse,
+          taxesResponse
+        ] = await Promise.allSettled([
+          makeLoyverseRequest('items'),
+          makeLoyverseRequest('categories'),
+          makeLoyverseRequest('modifiers'),
+          makeLoyverseRequest('stores'),
+          makeLoyverseRequest('taxes')
+        ]);
 
-    // Process results
-    const data = {
-      items: itemsResponse.status === 'fulfilled' ? itemsResponse.value : { items: [] },
-      categories: categoriesResponse.status === 'fulfilled' ? categoriesResponse.value : { categories: [] },
-      modifiers: modifiersResponse.status === 'fulfilled' ? modifiersResponse.value : { modifiers: [] },
-      stores: storesResponse.status === 'fulfilled' ? storesResponse.value : { stores: [] },
-      taxes: taxesResponse.status === 'fulfilled' ? taxesResponse.value : { taxes: [] },
-      errors: []
-    };
+        const data = {
+          items: itemsResponse.status === 'fulfilled' ? itemsResponse.value : { items: [] },
+          categories: categoriesResponse.status === 'fulfilled' ? categoriesResponse.value : { categories: [] },
+          modifiers: modifiersResponse.status === 'fulfilled' ? modifiersResponse.value : { modifiers: [] },
+          stores: storesResponse.status === 'fulfilled' ? storesResponse.value : { stores: [] },
+          taxes: taxesResponse.status === 'fulfilled' ? taxesResponse.value : { taxes: [] },
+          errors: []
+        };
 
-    // Collect any errors
-    [itemsResponse, categoriesResponse, modifiersResponse, storesResponse, taxesResponse]
-      .forEach((result, index) => {
-        if (result.status === 'rejected') {
-          const endpoints = ['items', 'categories', 'modifiers', 'stores', 'taxes'];
-          data.errors.push({
-            endpoint: endpoints[index],
-            error: result.reason.message
+        [itemsResponse, categoriesResponse, modifiersResponse, storesResponse, taxesResponse]
+          .forEach((result, index) => {
+            if (result.status === 'rejected') {
+              const endpoints = ['items', 'categories', 'modifiers', 'stores', 'taxes'];
+              data.errors.push({
+                endpoint: endpoints[index],
+                error: result.reason.message
+              });
+            }
+          });
+
+        res.json(data);
+      } else if (endpoint === 'modifiers') {
+        const data = await makeLoyverseRequest('modifiers');
+        res.json(data);
+      } else if (endpoint === 'modifier-groups') {
+        const modifiersData = await makeLoyverseRequest('modifiers');
+        
+        const modifierGroups = [];
+        const seenGroups = new Set();
+        
+        if (modifiersData.modifiers) {
+          modifiersData.modifiers.forEach(modifier => {
+            if (modifier.name && !seenGroups.has(modifier.name)) {
+              seenGroups.add(modifier.name);
+              modifierGroups.push({
+                id: modifier.id,
+                group_name: modifier.name,
+                created_at: modifier.created_at,
+                updated_at: modifier.updated_at
+              });
+            }
           });
         }
-      });
-
-    console.log('Comprehensive data fetched successfully');
-    res.json(data);
-  } catch (error) {
-    console.error('Error fetching comprehensive data:', error);
-    res.status(500).json({ 
-      error: 'Failed to fetch comprehensive data from Loyverse API', 
-      details: error.message 
-    });
-  }
-});
-
-// Specific endpoint for modifiers only
-app.get('/api/loyverse-modifiers', async (req, res) => {
-  try {
-    const data = await makeLoyverseRequest('modifiers');
-    res.json(data);
-  } catch (error) {
-    console.error('Error fetching modifiers:', error);
-    res.status(500).json({ 
-      error: 'Failed to fetch modifiers from Loyverse API', 
-      details: error.message 
-    });
-  }
-});
-
-// Specific endpoint for modifier groups (not available in API)
-app.get('/api/loyverse-modifier-groups', async (req, res) => {
-  try {
-    // Since modifier_groups endpoint doesn't exist, we'll return an empty response
-    // Modifier groups are actually part of the modifiers response
-    const modifiersData = await makeLoyverseRequest('modifiers');
-    
-    // Extract unique modifier groups from modifiers
-    const modifierGroups = [];
-    const seenGroups = new Set();
-    
-    if (modifiersData.modifiers) {
-      modifiersData.modifiers.forEach(modifier => {
-        if (modifier.name && !seenGroups.has(modifier.name)) {
-          seenGroups.add(modifier.name);
-          modifierGroups.push({
-            id: modifier.id,
-            group_name: modifier.name,
-            created_at: modifier.created_at,
-            updated_at: modifier.updated_at
-          });
-        }
-      });
+        
+        res.json({ modifier_groups: modifierGroups });
+      } else if (endpoint === 'variants') {
+        const data = await makeLoyverseRequest('items');
+        
+        const itemsWithVariants = data.items.filter(item => 
+          item.variants && item.variants.length > 1
+        );
+        
+        res.json({ 
+          items_with_variants: itemsWithVariants,
+          total_items: data.items.length,
+          items_with_variants_count: itemsWithVariants.length
+        });
+      } else {
+        // Generic endpoint
+        const data = await makeLoyverseRequest(endpoint, req.query);
+        res.json(data);
+      }
+    } else {
+      // Serve static files or handle root path
+      res.status(404).json({ error: 'Not found' });
     }
-    
-    res.json({ modifier_groups: modifierGroups });
   } catch (error) {
-    console.error('Error fetching modifier groups:', error);
+    console.error('Error:', error);
     res.status(500).json({ 
-      error: 'Failed to fetch modifier groups from Loyverse API', 
+      error: 'Internal server error', 
       details: error.message 
     });
   }
-});
-
-// Specific endpoint for variants (items with variants)
-app.get('/api/loyverse-variants', async (req, res) => {
-  try {
-    const data = await makeLoyverseRequest('items');
-    
-    // Filter items that have variants
-    const itemsWithVariants = data.items.filter(item => 
-      item.variants && item.variants.length > 1
-    );
-    
-    res.json({ 
-      items_with_variants: itemsWithVariants,
-      total_items: data.items.length,
-      items_with_variants_count: itemsWithVariants.length
-    });
-  } catch (error) {
-    console.error('Error fetching variants:', error);
-    res.status(500).json({ 
-      error: 'Failed to fetch variants from Loyverse API', 
-      details: error.message 
-    });
-  }
-});
-
-// Export for Vercel
-module.exports = app;
+};
