@@ -192,13 +192,19 @@ app.get('/api/loyverse-variants', async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
-  console.log(`Open http://localhost:${PORT} in your browser`);
-  console.log(`Available endpoints:`);
-  console.log(`  - /api/loyverse-data (comprehensive data)`);
-  console.log(`  - /api/loyverse-modifiers (modifiers only)`);
-  console.log(`  - /api/loyverse-modifier-groups (modifier groups)`);
-  console.log(`  - /api/loyverse-variants (items with variants)`);
-  console.log(`  - /api/loyverse/:endpoint (generic proxy)`);
-});
+// For Vercel deployment, export the app
+module.exports = app;
+
+// For local development, start the server
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(PORT, () => {
+    console.log(`Server running at http://localhost:${PORT}`);
+    console.log(`Open http://localhost:${PORT} in your browser`);
+    console.log(`Available endpoints:`);
+    console.log(`  - /api/loyverse-data (comprehensive data)`);
+    console.log(`  - /api/loyverse-modifiers (modifiers only)`);
+    console.log(`  - /api/loyverse-modifier-groups (modifier groups)`);
+    console.log(`  - /api/loyverse-variants (items with variants)`);
+    console.log(`  - /api/loyverse/:endpoint (generic proxy)`);
+  });
+}
