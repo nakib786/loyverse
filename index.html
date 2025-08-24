@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Loyverse Menu (API Live)</title>
+  <style>
+    body { 
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 20px; 
+      margin: 0;
+      min-height: 100vh;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 15px;
+      padding: 30px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+    h1 { 
+      text-align: center; 
+      color: #333; 
+      margin-bottom: 30px;
+      font-size: 2.5em;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+    }
+    .menu-category { margin-bottom: 40px; }
+    .menu-category h2 { 
+      background: linear-gradient(45deg, #667eea, #764ba2); 
+      color: white; 
+      padding: 15px 20px; 
+      border-radius: 10px; 
+      margin: 0;
+      font-size: 1.5em;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    .item { 
+      border: 1px solid #e0e0e0; 
+      margin: 15px 0; 
+      padding: 20px; 
+      border-radius: 12px; 
+      background: white;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .item:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+    .item h3 { 
+      margin: 0 0 10px 0; 
+      color: #333;
+      font-size: 1.3em;
+    }
+    .item p {
+      color: #666;
+      margin: 10px 0;
+      line-height: 1.5;
+    }
+    .variants, .modifiers { 
+      margin-top: 12px; 
+      font-size: 0.9em; 
+      color: #555;
+      padding: 8px 12px;
+      background: #f8f9fa;
+      border-radius: 6px;
+      border-left: 4px solid #667eea;
+    }
+    .price {
+      color: #667eea;
+      font-weight: bold;
+      font-size: 1.1em;
+    }
+    
+    .item-image {
+      width: 80px;
+      height: 80px;
+      object-fit: cover;
+      border-radius: 8px;
+      border: 1px solid #e0e0e0;
+      flex-shrink: 0;
+    }
+    
+    .item-no-image {
+      width: 80px;
+      height: 80px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      border: 1px solid #e0e0e0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #999;
+      font-size: 0.8em;
+      flex-shrink: 0;
+    }
+    
+    .item-content {
+      display: flex;
+      gap: 15px;
+      align-items: flex-start;
+    }
+    
+    .item-details {
+      flex: 1;
+      min-width: 0;
+    }
+    
+    @media (max-width: 768px) {
+      .item-content {
+        flex-direction: column;
+        gap: 10px;
+      }
+      
+      .item-image, .item-no-image {
+        width: 100%;
+        height: 120px;
+        align-self: center;
+      }
+    }
+    .loading {
+      text-align: center;
+      font-size: 1.2em;
+      color: #666;
+      padding: 40px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🍽️ Our Menu (Live from Loyverse)</h1>
+    <div style="text-align: center; margin-bottom: 20px;">
+      <a href="loyverse-data.html" style="display: inline-block; background: linear-gradient(45deg, #667eea, #764ba2); color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: 500; transition: transform 0.2s ease;">
+        🔍 View All Data (Modifiers, Variants & More)
+      </a>
+    </div>
+    <div id="menu" class="loading">Loading menu items...</div>
+  </div>
+
+  <script>
+    async function fetchLoyverse(endpoint) {
+      try {
+        const res = await fetch(`/api/loyverse/${endpoint}`);
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        const data = await res.json();
+        console.log(`API response for ${endpoint}:`, data);
+        return data;
+      } catch (error) {
+        console.error(`Error fetching ${endpoint}:`, error);
+        throw error;
+      }
+    }
+
+    async function loadMenu() {
+      try {
+        const [itemsRes, catsRes] = await Promise.all([
+          fetchLoyverse("items"),
+          fetchLoyverse("categories")
+        ]);
+
+        console.log('API Responses:', { itemsRes, catsRes });
+
+        const items = itemsRes.items || [];
+        const categories = catsRes.categories ? Object.fromEntries(catsRes.categories.map(c => [c.id, c.name])) : {};
+        const modifiers = {}; // Initialize empty modifiers object since the endpoint doesn't exist
+
+        console.log('Processed data:', { 
+          itemCount: items.length, 
+          categoryCount: Object.keys(categories).length,
+          categories: categories
+        });
+        
+        // Debug: Log first few items to see their structure
+        if (items.length > 0) {
+          console.log('Sample item structure:', items[0]);
+          console.log('Sample item variants:', JSON.stringify(items[0].variants, null, 2));
+          
+          // Check a few more items to see their variants
+          for (let i = 0; i < Math.min(3, items.length); i++) {
+            console.log(`Item ${i + 1} (${items[i].item_name}) variants:`, JSON.stringify(items[i].variants, null, 2));
+            console.log(`Item ${i + 1} (${items[i].item_name}) all properties:`, Object.keys(items[i]));
+          }
+        }
+
+        // Transform items for display
+        const formatted = items.map(item => {
+          // Safely get the first variant price, defaulting to 0 if not available
+          let price = 0;
+          let variants = item.variants || [];
+          
+          console.log(`\n=== Processing ${item.item_name} ===`);
+          console.log('Item properties:', Object.keys(item));
+          console.log('Item price fields:', {
+            price: item.price,
+            retail_price: item.retail_price,
+            sale_price: item.sale_price,
+            base_price: item.base_price
+          });
+          
+          // First, check if price is directly on the item
+          if (item.price !== undefined && item.price !== null) {
+            price = parseFloat(item.price) || 0;
+            console.log(`Found price on item: $${price}`);
+          } else if (item.retail_price !== undefined && item.retail_price !== null) {
+            price = parseFloat(item.retail_price) || 0;
+            console.log(`Found retail_price on item: $${price}`);
+          } else if (item.sale_price !== undefined && item.sale_price !== null) {
+            price = parseFloat(item.sale_price) || 0;
+            console.log(`Found sale_price on item: $${price}`);
+          } else if (item.base_price !== undefined && item.base_price !== null) {
+            price = parseFloat(item.base_price) || 0;
+            console.log(`Found base_price on item: $${price}`);
+          }
+          
+          // Check variants for real store prices only
+          if (variants.length > 0) {
+            const firstVariant = variants[0];
+            console.log(`Checking variant for ${item.item_name}:`, firstVariant);
+            
+            // Only use store prices (real selling prices)
+            if (firstVariant.stores && firstVariant.stores.length > 0) {
+              const firstStore = firstVariant.stores[0];
+              console.log(`Checking store for ${item.item_name}:`, firstStore);
+              
+              if (firstStore.price !== undefined && firstStore.price !== null) {
+                price = parseFloat(firstStore.price) || 0;
+                console.log(`Found real price in store: $${price}`);
+              }
+            }
+          }
+          
+          console.log(`Final price for ${item.item_name}: $${price}\n`);
+          
+          return {
+            name: item.item_name || "Unnamed Item",
+            category: categories[item.category_id] || "Uncategorized",
+            description: item.description ? item.description.replace(/<[^>]*>/g, '') : "", // Remove HTML tags
+            price: price,
+            variants: variants,
+            modifiers: item.modifier_ids?.map(id => modifiers[id]) || []
+          };
+        });
+
+        renderMenu(formatted);
+      } catch (err) {
+        console.error('Error in loadMenu:', err);
+        document.getElementById("menu").innerHTML = `<div style="color: red; padding: 20px; text-align: center;">
+          <h3>Error loading menu</h3>
+          <p>${err.message}</p>
+          <p>Please check the console for more details.</p>
+        </div>`;
+      }
+    }
+
+    function groupByCategory(items) {
+      return items.reduce((groups, item) => {
+        const cat = item.category || "Uncategorized";
+        if (!groups[cat]) groups[cat] = [];
+        groups[cat].push(item);
+        return groups;
+      }, {});
+    }
+
+    function renderMenu(data) {
+      const menuDiv = document.getElementById("menu");
+      menuDiv.innerHTML = "";
+      const categories = groupByCategory(data);
+
+      for (const [category, items] of Object.entries(categories)) {
+        const catDiv = document.createElement("div");
+        catDiv.className = "menu-category";
+
+        const catTitle = document.createElement("h2");
+        catTitle.textContent = category;
+        catDiv.appendChild(catTitle);
+
+        items.forEach(item => {
+          const itemDiv = document.createElement("div");
+          itemDiv.className = "item";
+          // Safely format price
+          const formatPrice = (price) => {
+            const numPrice = parseFloat(price);
+            return isNaN(numPrice) ? "0.00" : numPrice.toFixed(2);
+          };
+          
+          // Helper function to get variant price (real store prices only)
+          const getVariantPrice = (variant) => {
+            if (variant.stores && variant.stores.length > 0 && variant.stores[0].price !== undefined) {
+              return formatPrice(variant.stores[0].price);
+            }
+            return "0.00";
+          };
+          
+          itemDiv.innerHTML = `
+            <div class="item-content">
+              ${item.image_url ? `<img src="${item.image_url}" alt="${item.name}" class="item-image">` : '<div class="item-no-image">No Image</div>'}
+              <div class="item-details">
+                <h3>${item.name} <span class="price">$${formatPrice(item.price)}</span></h3>
+                ${item.description ? `<p>${item.description}</p>` : ""}
+                ${item.variants.length > 1 ? `<div class="variants"><strong>📏 Available Sizes:</strong> ${item.variants.map(v => `${v.variant_name || 'Default'} ($${getVariantPrice(v)})`).join(", ")}</div>` : ""}
+                ${item.modifiers.length ? `<div class="modifiers"><strong>➕ Extras:</strong> ${item.modifiers.join(", ")}</div>` : ""}
+              </div>
+            </div>
+          `;
+          catDiv.appendChild(itemDiv);
+        });
+
+        menuDiv.appendChild(catDiv);
+      }
+    }
+
+    loadMenu();
+  </script>
+</body>
+</html>

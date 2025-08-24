@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Loyverse API Test</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 20px;
+      min-height: 100vh;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 15px;
+      padding: 30px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+    
+    h1 {
+      text-align: center;
+      color: #333;
+      margin-bottom: 30px;
+    }
+    
+    .endpoint-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+    
+    .endpoint-card {
+      border: 1px solid #e0e0e0;
+      border-radius: 10px;
+      padding: 20px;
+      background: #f8f9fa;
+    }
+    
+    .endpoint-card h3 {
+      margin: 0 0 15px 0;
+      color: #333;
+      font-size: 1.2em;
+    }
+    
+    .endpoint-url {
+      background: #e9ecef;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-family: monospace;
+      font-size: 0.9em;
+      margin: 10px 0;
+      word-break: break-all;
+    }
+    
+    .test-button {
+      background: linear-gradient(45deg, #667eea, #764ba2);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 500;
+      margin: 10px 5px 10px 0;
+      transition: transform 0.2s ease;
+    }
+    
+    .test-button:hover {
+      transform: translateY(-1px);
+    }
+    
+    .test-button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .status {
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 0.9em;
+      margin: 10px 0;
+    }
+    
+    .status.loading {
+      background: #fff3cd;
+      color: #856404;
+      border: 1px solid #ffeaa7;
+    }
+    
+    .status.success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    
+    .status.error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+    
+    .response {
+      background: #f8f9fa;
+      border: 1px solid #e9ecef;
+      border-radius: 6px;
+      padding: 15px;
+      margin: 10px 0;
+      max-height: 200px;
+      overflow-y: auto;
+      font-family: monospace;
+      font-size: 0.8em;
+      white-space: pre-wrap;
+    }
+    
+    .summary {
+      background: linear-gradient(45deg, #667eea, #764ba2);
+      color: white;
+      padding: 20px;
+      border-radius: 10px;
+      margin-bottom: 30px;
+    }
+    
+    .summary h2 {
+      margin: 0 0 15px 0;
+    }
+    
+    .summary-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 15px;
+    }
+    
+    .stat {
+      text-align: center;
+    }
+    
+    .stat-number {
+      font-size: 2em;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+    
+    .stat-label {
+      font-size: 0.9em;
+      opacity: 0.9;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔧 Loyverse API Test</h1>
+    
+    <div class="summary">
+      <h2>📊 Test Summary</h2>
+      <div class="summary-stats">
+        <div class="stat">
+          <div class="stat-number" id="total-tests">0</div>
+          <div class="stat-label">Total Tests</div>
+        </div>
+        <div class="stat">
+          <div class="stat-number" id="passed-tests">0</div>
+          <div class="stat-label">Passed</div>
+        </div>
+        <div class="stat">
+          <div class="stat-number" id="failed-tests">0</div>
+          <div class="stat-label">Failed</div>
+        </div>
+        <div class="stat">
+          <div class="stat-number" id="pending-tests">0</div>
+          <div class="stat-label">Pending</div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="endpoint-grid">
+      <div class="endpoint-card">
+        <h3>📋 Comprehensive Data</h3>
+        <div class="endpoint-url">GET /api/loyverse-data</div>
+        <p>Fetches all data types: items, categories, modifiers, modifier groups, stores, and taxes.</p>
+        <button class="test-button" onclick="testEndpoint('loyverse-data')">Test Endpoint</button>
+        <div id="loyverse-data-status"></div>
+        <div id="loyverse-data-response" class="response" style="display: none;"></div>
+      </div>
+      
+      <div class="endpoint-card">
+        <h3>➕ Modifiers</h3>
+        <div class="endpoint-url">GET /api/loyverse-modifiers</div>
+        <p>Fetches all modifiers (add-ons, toppings, etc.) from Loyverse.</p>
+        <button class="test-button" onclick="testEndpoint('loyverse-modifiers')">Test Endpoint</button>
+        <div id="loyverse-modifiers-status"></div>
+        <div id="loyverse-modifiers-response" class="response" style="display: none;"></div>
+      </div>
+      
+      <div class="endpoint-card">
+        <h3>📋 Modifier Groups</h3>
+        <div class="endpoint-url">GET /api/loyverse-modifier-groups</div>
+        <p>Fetches modifier groups that organize modifiers together.</p>
+        <button class="test-button" onclick="testEndpoint('loyverse-modifier-groups')">Test Endpoint</button>
+        <div id="loyverse-modifier-groups-status"></div>
+        <div id="loyverse-modifier-groups-response" class="response" style="display: none;"></div>
+      </div>
+      
+      <div class="endpoint-card">
+        <h3>📏 Variants</h3>
+        <div class="endpoint-url">GET /api/loyverse-variants</div>
+        <p>Fetches items that have multiple variants (sizes, colors, etc.).</p>
+        <button class="test-button" onclick="testEndpoint('loyverse-variants')">Test Endpoint</button>
+        <div id="loyverse-variants-status"></div>
+        <div id="loyverse-variants-response" class="response" style="display: none;"></div>
+      </div>
+      
+      <div class="endpoint-card">
+        <h3>🍽️ Items</h3>
+        <div class="endpoint-url">GET /api/loyverse/items</div>
+        <p>Fetches all items from Loyverse inventory.</p>
+        <button class="test-button" onclick="testEndpoint('items')">Test Endpoint</button>
+        <div id="items-status"></div>
+        <div id="items-response" class="response" style="display: none;"></div>
+      </div>
+      
+      <div class="endpoint-card">
+        <h3>📂 Categories</h3>
+        <div class="endpoint-url">GET /api/loyverse/categories</div>
+        <p>Fetches all item categories from Loyverse.</p>
+        <button class="test-button" onclick="testEndpoint('categories')">Test Endpoint</button>
+        <div id="categories-status"></div>
+        <div id="categories-response" class="response" style="display: none;"></div>
+      </div>
+      
+      <div class="endpoint-card">
+        <h3>🏪 Stores</h3>
+        <div class="endpoint-url">GET /api/loyverse/stores</div>
+        <p>Fetches all store locations from Loyverse.</p>
+        <button class="test-button" onclick="testEndpoint('stores')">Test Endpoint</button>
+        <div id="stores-status"></div>
+        <div id="stores-response" class="response" style="display: none;"></div>
+      </div>
+      
+      <div class="endpoint-card">
+        <h3>💰 Taxes</h3>
+        <div class="endpoint-url">GET /api/loyverse/taxes</div>
+        <p>Fetches all tax configurations from Loyverse.</p>
+        <button class="test-button" onclick="testEndpoint('taxes')">Test Endpoint</button>
+        <div id="taxes-status"></div>
+        <div id="taxes-response" class="response" style="display: none;"></div>
+      </div>
+    </div>
+    
+    <div style="text-align: center; margin-top: 30px;">
+      <button class="test-button" onclick="runAllTests()">🚀 Run All Tests</button>
+      <button class="test-button" onclick="clearAllResults()">🗑️ Clear Results</button>
+      <a href="index.html" class="test-button" style="text-decoration: none; display: inline-block;">🏠 Back to Menu</a>
+      <a href="loyverse-data.html" class="test-button" style="text-decoration: none; display: inline-block;">🔍 Data Explorer</a>
+    </div>
+  </div>
+
+  <script>
+    let testResults = {
+      total: 0,
+      passed: 0,
+      failed: 0,
+      pending: 0
+    };
+
+    // Test a specific endpoint
+    async function testEndpoint(endpoint) {
+      const statusDiv = document.getElementById(`${endpoint.replace('/', '-')}-status`);
+      const responseDiv = document.getElementById(`${endpoint.replace('/', '-')}-response`);
+      const button = event.target;
+      
+      // Update UI
+      statusDiv.innerHTML = '<div class="status loading">Testing...</div>';
+      responseDiv.style.display = 'none';
+      button.disabled = true;
+      
+      testResults.pending++;
+      updateSummary();
+      
+      try {
+        const startTime = Date.now();
+        const response = await fetch(`/api/loyverse${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`);
+        const endTime = Date.now();
+        
+        if (response.ok) {
+          const data = await response.json();
+          
+          // Determine if test passed based on data structure
+          let testPassed = false;
+          let dataCount = 0;
+          
+          if (endpoint === 'loyverse-data') {
+            testPassed = data.items && data.categories && data.modifiers;
+            dataCount = (data.items?.items?.length || 0) + (data.categories?.categories?.length || 0) + (data.modifiers?.modifiers?.length || 0);
+          } else if (endpoint === 'loyverse-modifiers') {
+            testPassed = data.modifiers && Array.isArray(data.modifiers);
+            dataCount = data.modifiers?.length || 0;
+          } else if (endpoint === 'loyverse-modifier-groups') {
+            testPassed = data.modifier_groups && Array.isArray(data.modifier_groups);
+            dataCount = data.modifier_groups?.length || 0;
+          } else if (endpoint === 'loyverse-variants') {
+            testPassed = data.items_with_variants && Array.isArray(data.items_with_variants);
+            dataCount = data.items_with_variants?.length || 0;
+          } else {
+            // Generic test for other endpoints
+            testPassed = data && typeof data === 'object';
+            dataCount = Object.keys(data).length;
+          }
+          
+          if (testPassed) {
+            statusDiv.innerHTML = `<div class="status success">✅ Passed (${endTime - startTime}ms) - Found ${dataCount} records</div>`;
+            testResults.passed++;
+          } else {
+            statusDiv.innerHTML = `<div class="status error">❌ Failed - Invalid data structure</div>`;
+            testResults.failed++;
+          }
+          
+          // Show response data
+          responseDiv.textContent = JSON.stringify(data, null, 2);
+          responseDiv.style.display = 'block';
+          
+        } else {
+          const errorText = await response.text();
+          statusDiv.innerHTML = `<div class="status error">❌ Failed - HTTP ${response.status}</div>`;
+          responseDiv.textContent = `Error: ${response.status}\n${errorText}`;
+          responseDiv.style.display = 'block';
+          testResults.failed++;
+        }
+        
+      } catch (error) {
+        statusDiv.innerHTML = `<div class="status error">❌ Failed - ${error.message}</div>`;
+        responseDiv.textContent = `Error: ${error.message}`;
+        responseDiv.style.display = 'block';
+        testResults.failed++;
+      }
+      
+      testResults.pending--;
+      testResults.total++;
+      updateSummary();
+      button.disabled = false;
+    }
+
+    // Run all tests
+    async function runAllTests() {
+      const endpoints = [
+        'loyverse-data',
+        'loyverse-modifiers', 
+        'loyverse-modifier-groups',
+        'loyverse-variants',
+        'items',
+        'categories',
+        'stores',
+        'taxes'
+      ];
+      
+      for (const endpoint of endpoints) {
+        await testEndpoint(endpoint);
+        // Small delay between tests
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+    }
+
+    // Clear all results
+    function clearAllResults() {
+      document.querySelectorAll('.status').forEach(el => el.innerHTML = '');
+      document.querySelectorAll('.response').forEach(el => el.style.display = 'none');
+      document.querySelectorAll('.test-button').forEach(el => el.disabled = false);
+      
+      testResults = { total: 0, passed: 0, failed: 0, pending: 0 };
+      updateSummary();
+    }
+
+    // Update summary statistics
+    function updateSummary() {
+      document.getElementById('total-tests').textContent = testResults.total;
+      document.getElementById('passed-tests').textContent = testResults.passed;
+      document.getElementById('failed-tests').textContent = testResults.failed;
+      document.getElementById('pending-tests').textContent = testResults.pending;
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+      updateSummary();
+    });
+  </script>
+</body>
+</html>
+
