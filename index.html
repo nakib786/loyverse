@@ -142,7 +142,7 @@
   <script>
     async function fetchLoyverse(endpoint) {
       try {
-        const res = await fetch(`/api/loyverse/${endpoint}`);
+        const res = await fetch(`/api/${endpoint}`);
         if (!res.ok) {
           throw new Error(`HTTP error! status: ${res.status}`);
         }

@@ -180,43 +180,16 @@
     <div class="endpoint-grid">
       <div class="endpoint-card">
         <h3>📋 Comprehensive Data</h3>
-        <div class="endpoint-url">GET /api/loyverse-data</div>
-        <p>Fetches all data types: items, categories, modifiers, modifier groups, stores, and taxes.</p>
-        <button class="test-button" onclick="testEndpoint('loyverse-data')">Test Endpoint</button>
-        <div id="loyverse-data-status"></div>
-        <div id="loyverse-data-response" class="response" style="display: none;"></div>
-      </div>
-      
-      <div class="endpoint-card">
-        <h3>➕ Modifiers</h3>
-        <div class="endpoint-url">GET /api/loyverse-modifiers</div>
-        <p>Fetches all modifiers (add-ons, toppings, etc.) from Loyverse.</p>
-        <button class="test-button" onclick="testEndpoint('loyverse-modifiers')">Test Endpoint</button>
-        <div id="loyverse-modifiers-status"></div>
-        <div id="loyverse-modifiers-response" class="response" style="display: none;"></div>
-      </div>
-      
-      <div class="endpoint-card">
-        <h3>📋 Modifier Groups</h3>
-        <div class="endpoint-url">GET /api/loyverse-modifier-groups</div>
-        <p>Fetches modifier groups that organize modifiers together.</p>
-        <button class="test-button" onclick="testEndpoint('loyverse-modifier-groups')">Test Endpoint</button>
-        <div id="loyverse-modifier-groups-status"></div>
-        <div id="loyverse-modifier-groups-response" class="response" style="display: none;"></div>
-      </div>
-      
-      <div class="endpoint-card">
-        <h3>📏 Variants</h3>
-        <div class="endpoint-url">GET /api/loyverse-variants</div>
-        <p>Fetches items that have multiple variants (sizes, colors, etc.).</p>
-        <button class="test-button" onclick="testEndpoint('loyverse-variants')">Test Endpoint</button>
-        <div id="loyverse-variants-status"></div>
-        <div id="loyverse-variants-response" class="response" style="display: none;"></div>
+        <div class="endpoint-url">GET /api/data</div>
+        <p>Fetches all data types: items, categories, modifiers, stores, and taxes.</p>
+        <button class="test-button" onclick="testEndpoint('data')">Test Endpoint</button>
+        <div id="data-status"></div>
+        <div id="data-response" class="response" style="display: none;"></div>
       </div>
       
       <div class="endpoint-card">
         <h3>🍽️ Items</h3>
-        <div class="endpoint-url">GET /api/loyverse/items</div>
+        <div class="endpoint-url">GET /api/items</div>
         <p>Fetches all items from Loyverse inventory.</p>
         <button class="test-button" onclick="testEndpoint('items')">Test Endpoint</button>
         <div id="items-status"></div>
@@ -225,29 +198,11 @@
       
       <div class="endpoint-card">
         <h3>📂 Categories</h3>
-        <div class="endpoint-url">GET /api/loyverse/categories</div>
+        <div class="endpoint-url">GET /api/categories</div>
         <p>Fetches all item categories from Loyverse.</p>
         <button class="test-button" onclick="testEndpoint('categories')">Test Endpoint</button>
         <div id="categories-status"></div>
         <div id="categories-response" class="response" style="display: none;"></div>
-      </div>
-      
-      <div class="endpoint-card">
-        <h3>🏪 Stores</h3>
-        <div class="endpoint-url">GET /api/loyverse/stores</div>
-        <p>Fetches all store locations from Loyverse.</p>
-        <button class="test-button" onclick="testEndpoint('stores')">Test Endpoint</button>
-        <div id="stores-status"></div>
-        <div id="stores-response" class="response" style="display: none;"></div>
-      </div>
-      
-      <div class="endpoint-card">
-        <h3>💰 Taxes</h3>
-        <div class="endpoint-url">GET /api/loyverse/taxes</div>
-        <p>Fetches all tax configurations from Loyverse.</p>
-        <button class="test-button" onclick="testEndpoint('taxes')">Test Endpoint</button>
-        <div id="taxes-status"></div>
-        <div id="taxes-response" class="response" style="display: none;"></div>
       </div>
     </div>
     
@@ -283,7 +238,7 @@
       
       try {
         const startTime = Date.now();
-        const response = await fetch(`/api/loyverse${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`);
+        const response = await fetch(`/api${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`);
         const endTime = Date.now();
         
         if (response.ok) {
@@ -293,18 +248,15 @@
           let testPassed = false;
           let dataCount = 0;
           
-          if (endpoint === 'loyverse-data') {
+          if (endpoint === 'data') {
             testPassed = data.items && data.categories && data.modifiers;
             dataCount = (data.items?.items?.length || 0) + (data.categories?.categories?.length || 0) + (data.modifiers?.modifiers?.length || 0);
-          } else if (endpoint === 'loyverse-modifiers') {
-            testPassed = data.modifiers && Array.isArray(data.modifiers);
-            dataCount = data.modifiers?.length || 0;
-          } else if (endpoint === 'loyverse-modifier-groups') {
-            testPassed = data.modifier_groups && Array.isArray(data.modifier_groups);
-            dataCount = data.modifier_groups?.length || 0;
-          } else if (endpoint === 'loyverse-variants') {
-            testPassed = data.items_with_variants && Array.isArray(data.items_with_variants);
-            dataCount = data.items_with_variants?.length || 0;
+          } else if (endpoint === 'items') {
+            testPassed = data.items && Array.isArray(data.items);
+            dataCount = data.items?.length || 0;
+          } else if (endpoint === 'categories') {
+            testPassed = data.categories && Array.isArray(data.categories);
+            dataCount = data.categories?.length || 0;
           } else {
             // Generic test for other endpoints
             testPassed = data && typeof data === 'object';
@@ -347,14 +299,9 @@
     // Run all tests
     async function runAllTests() {
       const endpoints = [
-        'loyverse-data',
-        'loyverse-modifiers', 
-        'loyverse-modifier-groups',
-        'loyverse-variants',
+        'data',
         'items',
-        'categories',
-        'stores',
-        'taxes'
+        'categories'
       ];
       
       for (const endpoint of endpoints) {

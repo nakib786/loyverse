@@ -413,7 +413,7 @@
     async function fetchLoyverseData() {
       try {
         console.log('Fetching comprehensive Loyverse data...');
-        const response = await fetch('/api/loyverse-data');
+        const response = await fetch('/api/data');
         
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
